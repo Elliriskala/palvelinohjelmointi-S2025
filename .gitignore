@@ -73,3 +73,7 @@ typings/
 .serverless
 
 dist
+
+# backup files
+
+.history/

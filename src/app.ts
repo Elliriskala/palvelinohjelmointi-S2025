@@ -4,7 +4,6 @@ import express, {Request, Response} from 'express';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import cors from 'cors';
-
 import {notFound, errorHandler} from './middlewares';
 import api from './api';
 import {MessageResponse} from './types/Messages';
