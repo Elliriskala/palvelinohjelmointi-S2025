@@ -74,6 +74,7 @@ const putAnimal = async (
       req.params.id,
       req.body,
     );
+
     if (!updatedAnimal) {
       next(new CustomError('Animal not found', 404));
       return;
@@ -107,46 +108,42 @@ const deleteAnimal = async (
   }
 };
 
-// get animals by location
-const getAnimalsByLocation = async (
-  req: Request,
-  res: Response,
+// get animals within a box
+const getAnimalsWithinBox = async (
+  req: Request<{}, {}, {}, {topRight: string; bottomLeft: string}>,
+  res: Response<Animal[]>,
   next: NextFunction,
 ) => {
   try {
-    const topRight = req.query.topRight as string;
-    const bottomLeft = req.query.bottomLeft as string;
+    const topRight = req.query.topRight;
+    const bottomLeft = req.query.bottomLeft;
 
     if (!topRight || !bottomLeft) {
       return next(new CustomError('Missing query parameters', 400));
     }
 
-    // Api lat, lon
-    // Mongo uses [lon, lat]
-    // --> parse and swap coordinates for MongoDB
-    const [topRightLat, topRightLon] = topRight.split(',').map(Number);
-    const [bottomLeftLat, bottomLeftLon] = bottomLeft.split(',').map(Number);
-
-    if ([topRightLat, topRightLon, bottomLeftLat, bottomLeftLon].some(isNaN)) {
-      return next(
-        new CustomError('Invalid coordinate format, use lat,lon format', 400),
-      );
-    }
-
-    const bottomLeftPoint: [number, number] = [bottomLeftLon, bottomLeftLat];
-    const topRightPoint: [number, number] = [topRightLon, topRightLat];
-
-    // debug log to see the coordinates
-    console.log('Using $box with:', bottomLeftPoint, topRightPoint);
-
     const animals = await animalModel.find({
       location: {
         $geoWithin: {
-          $box: [bottomLeftPoint, topRightPoint],
+          $box: [topRight.split(','), bottomLeft.split(',')],
         },
       },
     });
 
+    res.json(animals);
+  } catch (error) {
+    next(new CustomError((error as Error).message, 500));
+  }
+};
+
+// find animal by species name
+const getBySpeciesName = async (
+  req: Request<{species_name: string}>,
+  res: Response<Animal[]>,
+  next: NextFunction,
+) => {
+  try {
+    const animals = await animalModel.findBySpecies(req.params.species_name);
     res.json(animals);
   } catch (error) {
     next(new CustomError((error as Error).message, 500));
@@ -159,5 +156,6 @@ export {
   getAnimal,
   putAnimal,
   deleteAnimal,
-  getAnimalsByLocation,
+  getAnimalsWithinBox,
+  getBySpeciesName,
 };

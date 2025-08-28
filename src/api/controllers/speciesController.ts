@@ -3,6 +3,7 @@ import {Species} from '../../types/Species';
 import {MessageResponse} from '../../types/Messages';
 import speciesModel from '../models/speciesModel';
 import CustomError from '../../classes/CustomError';
+import {Polygon} from 'geojson';
 
 type DBMessageResponse = MessageResponse & {
   data: Species;
@@ -107,4 +108,37 @@ const deleteSpecies = async (
   }
 };
 
-export {postSpecies, getAllSpecies, getSpecies, putSpecies, deleteSpecies};
+// find species by area using POST with area in body
+const findSpeciesByArea = async (
+  req: Request<{}, {}, {polygon: Polygon}>,
+  res: Response<Species[]>,
+  next: NextFunction,
+) => {
+  try {
+    const {polygon} = req.body;
+
+    if (!polygon) {
+      next(new CustomError('Missing polygon property in request body', 400));
+      return;
+    }
+
+    if (!polygon.type || !polygon.coordinates) {
+      next(new CustomError('Missing or invalid polygon structure', 400));
+      return;
+    }
+
+    const species = await speciesModel.findByArea(polygon);
+    res.json(species);
+  } catch (error) {
+    next(new CustomError((error as Error).message, 500));
+  }
+};
+
+export {
+  postSpecies,
+  getAllSpecies,
+  getSpecies,
+  putSpecies,
+  deleteSpecies,
+  findSpeciesByArea,
+};

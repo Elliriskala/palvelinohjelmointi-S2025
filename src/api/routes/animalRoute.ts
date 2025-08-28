@@ -5,7 +5,8 @@ import {
   postAnimal,
   putAnimal,
   deleteAnimal,
-  getAnimalsByLocation,
+  getAnimalsWithinBox,
+  getBySpeciesName,
 } from '../controllers/animalController';
 
 const router = express.Router();
@@ -13,8 +14,11 @@ const router = express.Router();
 // post a new animal or get all animals
 router.route('/').post(postAnimal).get(getAnimals);
 
-// get animals by location
-router.route('/location').get(getAnimalsByLocation);
+// get animals within a box
+router.route('/location').get(getAnimalsWithinBox);
+
+// get animals by species name
+router.route('/species/:species_name').get(getBySpeciesName);
 
 // get a single animal, update or delete animal by id
 router.route('/:id').get(getAnimal).put(putAnimal).delete(deleteAnimal);
