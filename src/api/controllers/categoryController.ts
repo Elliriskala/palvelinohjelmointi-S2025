@@ -19,7 +19,7 @@ const postCategory = async (
     // create the new category
     const savedCategory = await newCategory.save();
     res.status(201).json({
-      message: 'Category created successfully',
+      message: 'Category created',
       data: savedCategory,
     });
   } catch (error) {
@@ -35,7 +35,8 @@ const getCategories = async (
 ) => {
   try {
     // find all categories
-    res.json(await categoryModel.find());
+    // exclude the __v field from the response
+    res.json(await categoryModel.find().select('-__v'));
   } catch (error) {
     next(new CustomError((error as Error).message, 500));
   }
@@ -49,7 +50,8 @@ const getCategory = async (
 ) => {
   try {
     // find category by its ID
-    const category = await categoryModel.findById(req.params.id);
+    // exclude the __v field from the response
+    const category = await categoryModel.findById(req.params.id).select('-__v');
 
     // if category not found handle the 404 error
     if (!category) {
@@ -73,6 +75,7 @@ const putCategory = async (
     const updatedCategory = await categoryModel.findByIdAndUpdate(
       req.params.id,
       req.body,
+      { new: true }
     );
     if (!updatedCategory) {
       next(new CustomError('Category not found', 404));

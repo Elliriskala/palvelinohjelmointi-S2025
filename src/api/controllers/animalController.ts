@@ -19,7 +19,7 @@ const postAnimal = async (
     // create the new animal
     const savedAnimal = await newAnimal.save();
     res.status(201).json({
-      message: 'Animal created successfully',
+      message: 'Animal created',
       data: savedAnimal,
     });
   } catch (error) {
@@ -35,7 +35,18 @@ const getAnimals = async (
 ) => {
   try {
     // find all animals
-    res.json(await animalModel.find());
+    // exclude the __v field from the response
+    // include the species and category information with population
+    res.json(
+      await animalModel
+        .find()
+        .select('-__v')
+        .populate({
+          path: 'species',
+          select: '-__v',
+          populate: {path: 'category', select: '-__v'},
+        }),
+    );
   } catch (error) {
     next(new CustomError((error as Error).message, 500));
   }
@@ -49,7 +60,16 @@ const getAnimal = async (
 ) => {
   try {
     // find animal by its ID
-    const animal = await animalModel.findById(req.params.id);
+    // exclude the __v field from the response
+    // include the species and category information with population
+    const animal = await animalModel
+      .findById(req.params.id)
+      .select('-__v')
+      .populate({
+        path: 'species',
+        select: '-__v',
+        populate: {path: 'category', select: '-__v'},
+      });
 
     // if animal not found handle the 404 error
     if (!animal) {
@@ -73,6 +93,7 @@ const putAnimal = async (
     const updatedAnimal = await animalModel.findByIdAndUpdate(
       req.params.id,
       req.body,
+      { new: true }
     );
 
     if (!updatedAnimal) {
@@ -122,13 +143,22 @@ const getAnimalsWithinBox = async (
       return next(new CustomError('Missing query parameters', 400));
     }
 
-    const animals = await animalModel.find({
-      location: {
-        $geoWithin: {
-          $box: [topRight.split(','), bottomLeft.split(',')],
+    // exclude the __v field from the response
+    // include the species and category information with population
+    const animals = await animalModel
+      .find({
+        location: {
+          $geoWithin: {
+            $box: [topRight.split(','), bottomLeft.split(',')],
+          },
         },
-      },
-    });
+      })
+      .select('-__v')
+      .populate({
+        path: 'species',
+        select: '-__v',
+        populate: {path: 'category', select: '-__v'},
+      });
 
     res.json(animals);
   } catch (error) {

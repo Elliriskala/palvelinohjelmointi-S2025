@@ -20,7 +20,7 @@ const postSpecies = async (
     // create the new species
     const savedSpecies = await newSpecies.save();
     res.status(201).json({
-      message: 'Species created successfully',
+      message: 'Species created',
       data: savedSpecies,
     });
   } catch (error) {
@@ -36,7 +36,14 @@ const getAllSpecies = async (
 ) => {
   try {
     // find all categories
-    res.json(await speciesModel.find());
+    // exclude the __v field from the response
+    // include the category information with population
+    res.json(
+      await speciesModel
+        .find()
+        .select('-__v')
+        .populate({path: 'category', select: '-__v'}),
+    );
   } catch (error) {
     next(new CustomError((error as Error).message, 500));
   }
@@ -50,7 +57,12 @@ const getSpecies = async (
 ) => {
   try {
     // find species by its ID
-    const species = await speciesModel.findById(req.params.id);
+    // exclude the __v field from the response
+    // include the category information with population
+    const species = await speciesModel
+      .findById(req.params.id)
+      .select('-__v')
+      .populate({path: 'category', select: '-__v'});
 
     // if species not found handle the 404 error
     if (!species) {
@@ -74,6 +86,7 @@ const putSpecies = async (
     const updatedSpecies = await speciesModel.findByIdAndUpdate(
       req.params.id,
       req.body,
+      { new: true }
     );
     if (!updatedSpecies) {
       next(new CustomError('Species not found', 404));
